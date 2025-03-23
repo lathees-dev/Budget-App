@@ -1,103 +1,729 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CalendarIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  format,
+  addMonths,
+  subMonths,
+  addYears,
+  subYears,
+  startOfMonth,
+  endOfMonth,
+} from "date-fns";
+
+interface Category {
+  id: string;
+  name: string;
+  budget: number;
+  color: string;
+}
+
+interface Transaction {
+  id: string;
+  categoryId: string;
+  amount: number;
+  date: string;
+  description: string;
+}
+
+// const COLORS = [
+//   "#0088FE",
+//   "#00C49F",
+//   "#FFBB28",
+//   "#FF8042",
+//   "#8884D8",
+//   "#82CA9D",
+// ];
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [isYearly, setIsYearly] = useState(false);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState({
+    name: "",
+    budget: 0,
+    color: "#0088FE",
+  });
+  const [newTransaction, setNewTransaction] = useState({
+    categoryId: "",
+    amount: 0,
+    description: "",
+    date: format(new Date(), "yyyy-MM-dd"),
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const savedCategories = localStorage.getItem("categories");
+    const savedTransactions = localStorage.getItem("transactions");
+    const savedNewCategory = localStorage.getItem("newCategory");
+    const savedNewTransaction = localStorage.getItem("newTransaction");
+
+    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
+    if (savedNewCategory) setNewCategory(JSON.parse(savedNewCategory));
+    if (savedNewTransaction) setNewTransaction(JSON.parse(savedNewTransaction));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("categories", JSON.stringify(categories));
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+    localStorage.setItem("newCategory", JSON.stringify(newCategory));
+    localStorage.setItem("newTransaction", JSON.stringify(newTransaction));
+  }, [categories, transactions, newCategory, newTransaction]);
+
+  const handleAddCategory = () => {
+    if (newCategory.name && newCategory.budget > 0) {
+      setCategories([
+        ...categories,
+        { ...newCategory, id: Date.now().toString() },
+      ]);
+      setNewCategory({ name: "", budget: 0, color: "#0088FE" });
+      setIsAddCategoryOpen(false);
+    }
+  };
+
+  const handleAddTransaction = () => {
+    if (newTransaction.categoryId && newTransaction.amount > 0) {
+      setTransactions([
+        ...transactions,
+        { ...newTransaction, id: Date.now().toString() },
+      ]);
+      setNewTransaction({
+        categoryId: "",
+        amount: 0,
+        description: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+      });
+      setIsAddTransactionOpen(false);
+    }
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    setCategories(categories.filter((cat) => cat.id !== categoryId));
+    setTransactions(
+      transactions.filter((trans) => trans.categoryId !== categoryId)
+    );
+  };
+
+  const handleDeleteTransaction = (transactionId: string) => {
+    setTransactions(transactions.filter((trans) => trans.id !== transactionId));
+  };
+
+  const getCategorySpending = (categoryId: string) => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    return transactions
+      .filter(
+        (trans) =>
+          trans.categoryId === categoryId &&
+          new Date(trans.date) >= monthStart &&
+          new Date(trans.date) <= monthEnd
+      )
+      .reduce((sum, trans) => sum + trans.amount, 0);
+  };
+
+  const getPieChartData = () => {
+    return categories.map((category) => ({
+      name: category.name,
+      value: getCategorySpending(category.id),
+      color: category.color,
+    }));
+  };
+
+  return (
+    <main className="min-h-screen bg-white text-black p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Budget Tracker</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              className="px-4 py-2 bg-black text-white rounded-lg shadow text-sm font-medium hover:bg-gray-800"
+            >
+              {isYearly ? "Monthly View" : "Yearly View"}
+            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() =>
+                  setCurrentDate(
+                    isYearly
+                      ? subYears(currentDate, 1)
+                      : subMonths(currentDate, 1)
+                  )
+                }
+                className="p-2 bg-black text-white rounded-lg shadow hover:bg-gray-800"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setIsMonthSelectorOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg shadow hover:bg-gray-800"
+              >
+                <CalendarIcon className="h-5 w-5" />
+                <span className="text-sm font-medium">
+                  {format(currentDate, isYearly ? "yyyy" : "MMMM yyyy")}
+                </span>
+              </button>
+              <button
+                onClick={() =>
+                  setCurrentDate(
+                    isYearly
+                      ? addYears(currentDate, 1)
+                      : addMonths(currentDate, 1)
+                  )
+                }
+                className="p-2 bg-black text-white rounded-lg shadow hover:bg-gray-800"
+              >
+                <ChevronRightIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Dashboard Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-black text-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-semibold mb-2">Total Budget</h3>
+            <p className="text-3xl font-bold">
+              $
+              {categories
+                .reduce((sum, cat) => sum + cat.budget, 0)
+                .toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-black text-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-semibold mb-2">Total Spent</h3>
+            <p className="text-3xl font-bold">
+              $
+              {transactions
+                .filter((trans) => {
+                  const transDate = new Date(trans.date);
+                  const monthStart = startOfMonth(currentDate);
+                  const monthEnd = endOfMonth(currentDate);
+                  return transDate >= monthStart && transDate <= monthEnd;
+                })
+                .reduce((sum, trans) => sum + trans.amount, 0)
+                .toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-black text-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-semibold mb-2">Remaining</h3>
+            <p className="text-3xl font-bold">
+              $
+              {(
+                categories.reduce((sum, cat) => sum + cat.budget, 0) -
+                transactions
+                  .filter((trans) => {
+                    const transDate = new Date(trans.date);
+                    const monthStart = startOfMonth(currentDate);
+                    const monthEnd = endOfMonth(currentDate);
+                    return transDate >= monthStart && transDate <= monthEnd;
+                  })
+                  .reduce((sum, trans) => sum + trans.amount, 0)
+              ).toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Categories and Spending Chart */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-black text-white rounded-xl shadow p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold">Categories</h2>
+                <button
+                  onClick={() => setIsAddCategoryOpen(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>Add Category</span>
+                </button>
+              </div>
+              <div className="space-y-4">
+                {categories.map((category) => {
+                  const spent = getCategorySpending(category.id);
+                  const progress = (spent / category.budget) * 100;
+                  return (
+                    <div
+                      key={category.id}
+                      className="bg-gray-100 text-black rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <h3 className="font-medium">{category.name}</h3>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm">
+                            ${spent.toLocaleString()} / $
+                            {category.budget.toLocaleString()}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(progress, 100)}%`,
+                            backgroundColor: category.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Spending Chart */}
+            <div className="bg-black text-white rounded-xl shadow p-6">
+              <h2 className="text-xl font-semibold mb-6">
+                Spending Distribution
+              </h2>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={getPieChartData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {getPieChartData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Transactions */}
+          <div className="bg-black text-white rounded-xl shadow p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Transactions</h2>
+              <button
+                onClick={() => setIsAddTransactionOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100"
+              >
+                <PlusIcon className="h-5 w-5" />
+                <span>Add Transaction</span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              {transactions
+                .filter((trans) => {
+                  const transDate = new Date(trans.date);
+                  const monthStart = startOfMonth(currentDate);
+                  const monthEnd = endOfMonth(currentDate);
+                  return transDate >= monthStart && transDate <= monthEnd;
+                })
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
+                .map((transaction) => {
+                  const category = categories.find(
+                    (cat) => cat.id === transaction.categoryId
+                  );
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="flex justify-between items-center p-4 bg-gray-100 text-black rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{transaction.description}</p>
+                        <p className="text-sm">
+                          {format(new Date(transaction.date), "MMM d, yyyy")} •{" "}
+                          {category?.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="font-medium">
+                          ${transaction.amount.toLocaleString()}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleDeleteTransaction(transaction.id)
+                          }
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Category Modal */}
+      <Transition appear show={isAddCategoryOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsAddCategoryOpen(false)}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Add New Category
+                  </Dialog.Title>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newCategory.name}
+                        onChange={(e) =>
+                          setNewCategory({
+                            ...newCategory,
+                            name: e.target.value,
+                          })
+                        }
+                        className="mt-1 h-10 border border-gray-400 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Category Name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Budget
+                      </label>
+                      <input
+                        type="number"
+                        value={newCategory.budget}
+                        onChange={(e) =>
+                          setNewCategory({
+                            ...newCategory,
+                            budget: Number(e.target.value),
+                          })
+                        }
+                        className="mt-1 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Color
+                      </label>
+                      <input
+                        type="color"
+                        value={newCategory.color}
+                        onChange={(e) =>
+                          setNewCategory({
+                            ...newCategory,
+                            color: e.target.value,
+                          })
+                        }
+                        className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsAddCategoryOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={handleAddCategory}
+                    >
+                      Add Category
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Add Transaction Modal */}
+      <Transition appear show={isAddTransactionOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsAddTransactionOpen(false)}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Add New Transaction
+                  </Dialog.Title>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Category
+                      </label>
+                      <select
+                        value={newTransaction.categoryId}
+                        onChange={(e) =>
+                          setNewTransaction({
+                            ...newTransaction,
+                            categoryId: e.target.value,
+                          })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Amount
+                      </label>
+                      <input
+                        type="number"
+                        value={newTransaction.amount}
+                        onChange={(e) =>
+                          setNewTransaction({
+                            ...newTransaction,
+                            amount: Number(e.target.value),
+                          })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        value={newTransaction.description}
+                        onChange={(e) =>
+                          setNewTransaction({
+                            ...newTransaction,
+                            description: e.target.value,
+                          })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Transaction Description"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        value={newTransaction.date}
+                        onChange={(e) =>
+                          setNewTransaction({
+                            ...newTransaction,
+                            date: e.target.value,
+                          })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsAddTransactionOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={handleAddTransaction}
+                    >
+                      Add Transaction
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Month/Year Selector Modal */}
+      <Transition appear show={isMonthSelectorOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsMonthSelectorOpen(false)}
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Select {isYearly ? "Year" : "Month"}
+                  </Dialog.Title>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {isYearly
+                      ? Array.from(
+                          { length: 10 },
+                          (_, i) => new Date().getFullYear() - 5 + i
+                        ).map((year) => (
+                          <button
+                            key={year}
+                            onClick={() => {
+                              setCurrentDate(new Date(year, 0, 1));
+                              setIsMonthSelectorOpen(false);
+                            }}
+                            className={`p-2 rounded-lg ${
+                              year === currentDate.getFullYear()
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            {year}
+                          </button>
+                        ))
+                      : Array.from(
+                          { length: 12 },
+                          (_, i) => new Date(2000, i, 1)
+                        ).map((date) => (
+                          <button
+                            key={date.getMonth()}
+                            onClick={() => {
+                              setCurrentDate(
+                                new Date(
+                                  currentDate.getFullYear(),
+                                  date.getMonth(),
+                                  1
+                                )
+                              );
+                              setIsMonthSelectorOpen(false);
+                            }}
+                            className={`p-2 rounded-lg ${
+                              date.getMonth() === currentDate.getMonth()
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            {format(date, "MMM")}
+                          </button>
+                        ))}
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+    </main>
   );
 }
