@@ -196,7 +196,7 @@ export default function Home() {
 
         {/* Dashboard Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-black text-white rounded-xl shadow p-6">
+          <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
             <h3 className="text-lg font-semibold mb-2">Total Budget</h3>
             <p className="text-3xl font-bold">
               $
@@ -205,7 +205,7 @@ export default function Home() {
                 .toLocaleString()}
             </p>
           </div>
-          <div className="bg-black text-white rounded-xl shadow p-6">
+          <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
             <h3 className="text-lg font-semibold mb-2">Total Spent</h3>
             <p className="text-3xl font-bold">
               $
@@ -220,7 +220,7 @@ export default function Home() {
                 .toLocaleString()}
             </p>
           </div>
-          <div className="bg-black text-white rounded-xl shadow p-6">
+          <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
             <h3 className="text-lg font-semibold mb-2">Remaining</h3>
             <p className="text-3xl font-bold">
               $
@@ -243,12 +243,12 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Categories and Spending Chart */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-black text-white rounded-xl shadow p-6">
+            <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold">Categories</h2>
                 <button
                   onClick={() => setIsAddCategoryOpen(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100"
+                  className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-100"
                 >
                   <PlusIcon className="h-5 w-5" />
                   <span>Add Category</span>
@@ -261,7 +261,7 @@ export default function Home() {
                   return (
                     <div
                       key={category.id}
-                      className="bg-gray-100 text-black rounded-lg p-4"
+                      className="bg-gray-200 text-black hover:scale-105 rounded-lg p-4"
                     >
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center space-x-2">
@@ -300,7 +300,7 @@ export default function Home() {
             </div>
 
             {/* Spending Chart */}
-            <div className="bg-black text-white rounded-xl shadow p-6">
+            <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
               <h2 className="text-xl font-semibold mb-6">
                 Spending Distribution
               </h2>
@@ -328,12 +328,12 @@ export default function Home() {
           </div>
 
           {/* Transactions */}
-          <div className="bg-black text-white rounded-xl shadow p-6">
+          <div className="bg-white text-black border border-gray-400 rounded-xl shadow p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Transactions</h2>
               <button
                 onClick={() => setIsAddTransactionOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100"
+                className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-100"
               >
                 <PlusIcon className="h-5 w-5" />
                 <span>Add Transaction</span>
@@ -358,7 +358,7 @@ export default function Home() {
                   return (
                     <div
                       key={transaction.id}
-                      className="flex justify-between items-center p-4 bg-gray-100 text-black rounded-lg"
+                      className="flex justify-between items-center p-4 bg-gray-200 text-black rounded-lg hover:scale-105"
                     >
                       <div>
                         <p className="font-medium">{transaction.description}</p>
