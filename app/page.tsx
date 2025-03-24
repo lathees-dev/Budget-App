@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   CalendarIcon,
   PlusIcon,
   TrashIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
@@ -36,15 +37,6 @@ interface Transaction {
   description: string;
 }
 
-// const COLORS = [
-//   "#0088FE",
-//   "#00C49F",
-//   "#FFBB28",
-//   "#FF8042",
-//   "#8884D8",
-//   "#82CA9D",
-// ];
-
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -53,6 +45,8 @@ export default function Home() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
+  const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({
     name: "",
     budget: 0,
@@ -64,6 +58,10 @@ export default function Home() {
     description: "",
     date: format(new Date(), "yyyy-MM-dd"),
   });
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(
+    null
+  );
 
   useEffect(() => {
     const savedCategories = localStorage.getItem("categories");
@@ -108,6 +106,34 @@ export default function Home() {
         date: format(new Date(), "yyyy-MM-dd"),
       });
       setIsAddTransactionOpen(false);
+    }
+  };
+
+  const handleEditCategory = () => {
+    if (editCategory && editCategory.name && editCategory.budget > 0) {
+      setCategories(
+        categories.map((cat) =>
+          cat.id === editCategory.id ? editCategory : cat
+        )
+      );
+      setEditCategory(null);
+      setIsEditCategoryOpen(false);
+    }
+  };
+
+  const handleEditTransaction = () => {
+    if (
+      editTransaction &&
+      editTransaction.categoryId &&
+      editTransaction.amount > 0
+    ) {
+      setTransactions(
+        transactions.map((trans) =>
+          trans.id === editTransaction.id ? editTransaction : trans
+        )
+      );
+      setEditTransaction(null);
+      setIsEditTransactionOpen(false);
     }
   };
 
@@ -248,7 +274,7 @@ export default function Home() {
                 <h2 className="text-xl font-semibold">Categories</h2>
                 <button
                   onClick={() => setIsAddCategoryOpen(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-100"
+                  className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700"
                 >
                   <PlusIcon className="h-5 w-5" />
                   <span>Add Category</span>
@@ -276,6 +302,15 @@ export default function Home() {
                             ${spent.toLocaleString()} / $
                             {category.budget.toLocaleString()}
                           </span>
+                          <button
+                            onClick={() => {
+                              setEditCategory(category);
+                              setIsEditCategoryOpen(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
                           <button
                             onClick={() => handleDeleteCategory(category.id)}
                             className="text-red-600 hover:text-red-700"
@@ -333,7 +368,7 @@ export default function Home() {
               <h2 className="text-xl font-semibold">Transactions</h2>
               <button
                 onClick={() => setIsAddTransactionOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-100"
+                className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-700"
               >
                 <PlusIcon className="h-5 w-5" />
                 <span>Add Transaction</span>
@@ -372,6 +407,15 @@ export default function Home() {
                           ${transaction.amount.toLocaleString()}
                         </span>
                         <button
+                          onClick={() => {
+                            setEditTransaction(transaction);
+                            setIsEditTransactionOpen(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button
                           onClick={() =>
                             handleDeleteTransaction(transaction.id)
                           }
@@ -404,7 +448,7 @@ export default function Home() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/80" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -418,7 +462,7 @@ export default function Home() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
@@ -439,7 +483,7 @@ export default function Home() {
                             name: e.target.value,
                           })
                         }
-                        className="mt-1 h-10 border border-gray-400 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 h-10 border border-gray-400 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="Category Name"
                       />
                     </div>
@@ -456,7 +500,7 @@ export default function Home() {
                             budget: Number(e.target.value),
                           })
                         }
-                        className="mt-1 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="0.00"
                       />
                     </div>
@@ -516,7 +560,7 @@ export default function Home() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/80" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -530,7 +574,7 @@ export default function Home() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-gray-900"
@@ -550,7 +594,7 @@ export default function Home() {
                             categoryId: e.target.value,
                           })
                         }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       >
                         <option value="">Select a category</option>
                         {categories.map((category) => (
@@ -573,7 +617,7 @@ export default function Home() {
                             amount: Number(e.target.value),
                           })
                         }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="0.00"
                       />
                     </div>
@@ -590,7 +634,7 @@ export default function Home() {
                             description: e.target.value,
                           })
                         }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         placeholder="Transaction Description"
                       />
                     </div>
@@ -607,7 +651,7 @@ export default function Home() {
                             date: e.target.value,
                           })
                         }
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -625,6 +669,252 @@ export default function Home() {
                       onClick={handleAddTransaction}
                     >
                       Add Transaction
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Edit Category Modal */}
+      <Transition appear show={isEditCategoryOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsEditCategoryOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/80" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Edit Category
+                  </Dialog.Title>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        value={editCategory?.name || ""}
+                        onChange={(e) =>
+                          setEditCategory({
+                            ...editCategory,
+                            name: e.target.value,
+                          } as Category)
+                        }
+                        className="mt-1 h-10 p-2 border border-gray-400 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Category Name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Budget
+                      </label>
+                      <input
+                        type="number"
+                        value={editCategory?.budget || 0}
+                        onChange={(e) =>
+                          setEditCategory({
+                            ...editCategory,
+                            budget: Number(e.target.value),
+                          } as Category)
+                        }
+                        className="mt-1 p-2 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Color
+                      </label>
+                      <input
+                        type="color"
+                        value={editCategory?.color || "#0088FE"}
+                        onChange={(e) =>
+                          setEditCategory({
+                            ...editCategory,
+                            color: e.target.value,
+                          } as Category)
+                        }
+                        className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsEditCategoryOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={handleEditCategory}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Edit Transaction Modal */}
+      <Transition appear show={isEditTransactionOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsEditTransactionOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/80" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Edit Transaction
+                  </Dialog.Title>
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Category
+                      </label>
+                      <select
+                        value={editTransaction?.categoryId || ""}
+                        onChange={(e) =>
+                          setEditTransaction({
+                            ...editTransaction,
+                            categoryId: e.target.value,
+                          } as Transaction)
+                        }
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Amount
+                      </label>
+                      <input
+                        type="number"
+                        value={editTransaction?.amount || 0}
+                        onChange={(e) =>
+                          setEditTransaction({
+                            ...editTransaction,
+                            amount: Number(e.target.value),
+                          } as Transaction)
+                        }
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        value={editTransaction?.description || ""}
+                        onChange={(e) =>
+                          setEditTransaction({
+                            ...editTransaction,
+                            description: e.target.value,
+                          } as Transaction)
+                        }
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Transaction Description"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        value={editTransaction?.date || ""}
+                        onChange={(e) =>
+                          setEditTransaction({
+                            ...editTransaction,
+                            date: e.target.value,
+                          } as Transaction)
+                        }
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      onClick={() => setIsEditTransactionOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      onClick={handleEditTransaction}
+                    >
+                      Save Changes
                     </button>
                   </div>
                 </Dialog.Panel>
