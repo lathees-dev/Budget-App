@@ -492,18 +492,22 @@ export default function Home() {
                         Budget
                       </label>
                       <input
-                        type="number"
-                        value={newCategory.budget}
-                        onChange={(e) =>
+                        type="text" // Change type to text to allow free input
+                        value={
+                          newCategory.budget === 0 ? "" : newCategory.budget
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setNewCategory({
                             ...newCategory,
-                            budget: Number(e.target.value),
-                          })
-                        }
+                            budget: value === "" ? 0 : parseFloat(value),
+                          });
+                        }}
                         className="mt-1 p-2 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="0.00"
+                        placeholder="eg. 1000"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Color
@@ -609,16 +613,21 @@ export default function Home() {
                         Amount
                       </label>
                       <input
-                        type="number"
-                        value={newTransaction.amount}
-                        onChange={(e) =>
+                        type="text" // Change type to text to allow free input
+                        value={
+                          newTransaction.amount === 0
+                            ? ""
+                            : newTransaction.amount
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setNewTransaction({
                             ...newTransaction,
-                            amount: Number(e.target.value),
-                          })
-                        }
-                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="0.00"
+                            amount: value === "" ? 0 : parseFloat(value),
+                          });
+                        }}
+                        className="mt-1 p-2 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="eg. 1000"
                       />
                     </div>
                     <div>
@@ -738,18 +747,22 @@ export default function Home() {
                         Budget
                       </label>
                       <input
-                        type="number"
-                        value={editCategory?.budget || 0}
-                        onChange={(e) =>
+                        type="text" // Change type to text to allow free input
+                        value={
+                          editCategory?.budget === 0 ? "" : editCategory?.budget
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setEditCategory({
                             ...editCategory,
-                            budget: Number(e.target.value),
-                          } as Category)
-                        }
+                            budget: value === "" ? 0 : parseFloat(value),
+                          } as Category);
+                        }}
                         className="mt-1 p-2 block w-full rounded-md h-10 border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="0.00"
+                        placeholder="eg. 1000"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Color
@@ -855,18 +868,24 @@ export default function Home() {
                         Amount
                       </label>
                       <input
-                        type="number"
-                        value={editTransaction?.amount || 0}
-                        onChange={(e) =>
+                        type="text" // Change type to text to allow free input
+                        value={
+                          editTransaction?.amount === 0
+                            ? ""
+                            : editTransaction?.amount
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setEditTransaction({
                             ...editTransaction,
-                            amount: Number(e.target.value),
-                          } as Transaction)
-                        }
+                            amount: value === "" ? 0 : parseFloat(value),
+                          } as Transaction);
+                        }}
                         className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="0.00"
+                        placeholder="eg. 1000"
                       />
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Description
