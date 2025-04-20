@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -21,6 +21,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Category {
   id: string;
@@ -47,105 +48,232 @@ export default function Home() {
   const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [newCategory, setNewCategory] = useState({
     name: "",
     budget: 0,
     color: "#0088FE",
   });
+
   const [newTransaction, setNewTransaction] = useState({
     categoryId: "",
     amount: 0,
     description: "",
     date: format(new Date(), "yyyy-MM-dd"),
   });
+
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [editTransaction, setEditTransaction] = useState<Transaction | null>(
     null
   );
 
-  useEffect(() => {
-    const savedCategories = localStorage.getItem("categories");
-    const savedTransactions = localStorage.getItem("transactions");
-    const savedNewCategory = localStorage.getItem("newCategory");
-    const savedNewTransaction = localStorage.getItem("newTransaction");
+  const { user, logout } = useAuth();
 
-    if (savedCategories) setCategories(JSON.parse(savedCategories));
-    if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
-    if (savedNewCategory) setNewCategory(JSON.parse(savedNewCategory));
-    if (savedNewTransaction) setNewTransaction(JSON.parse(savedNewTransaction));
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch categories
+        const categoriesRes = await fetch("/api/categories");
+        if (!categoriesRes.ok) throw new Error("Failed to fetch categories");
+        const categoriesData = await categoriesRes.json();
+
+        // Fetch transactions
+        const transactionsRes = await fetch("/api/transactions");
+        if (!transactionsRes.ok)
+          throw new Error("Failed to fetch transactions");
+        const transactionsData = await transactionsRes.json();
+
+        setCategories(categoriesData);
+        setTransactions(transactionsData);
+        setError("");
+      } catch (err) {
+        setError("Error loading data. Please try again.");
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("categories", JSON.stringify(categories));
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-    localStorage.setItem("newCategory", JSON.stringify(newCategory));
-    localStorage.setItem("newTransaction", JSON.stringify(newTransaction));
-  }, [categories, transactions, newCategory, newTransaction]);
-
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (newCategory.name && newCategory.budget > 0) {
-      setCategories([
-        ...categories,
-        { ...newCategory, id: Date.now().toString() },
-      ]);
-      setNewCategory({ name: "", budget: 0, color: "#0088FE" });
-      setIsAddCategoryOpen(false);
+      try {
+        const response = await fetch("/api/categories", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCategory),
+        });
+
+        if (!response.ok) throw new Error("Failed to add category");
+
+        const addedCategory = await response.json();
+        setCategories([...categories, addedCategory]);
+        setNewCategory({ name: "", budget: 0, color: "#0088FE" });
+        setIsAddCategoryOpen(false);
+      } catch (err) {
+        setError("Error adding category");
+        console.error("Error adding category:", err);
+      }
     }
   };
 
-  const handleAddTransaction = () => {
+  const handleAddTransaction = async () => {
     if (newTransaction.categoryId && newTransaction.amount > 0) {
-      setTransactions([
-        ...transactions,
-        { ...newTransaction, id: Date.now().toString() },
-      ]);
-      setNewTransaction({
-        categoryId: "",
-        amount: 0,
-        description: "",
-        date: format(new Date(), "yyyy-MM-dd"),
-      });
-      setIsAddTransactionOpen(false);
+      try {
+        console.log("Submitting transaction:", newTransaction);
+
+        const response = await fetch("/api/transactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...newTransaction,
+            amount: Number(newTransaction.amount), // Ensure amount is sent as a number
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to add transaction");
+        }
+
+        const addedTransaction = await response.json();
+        console.log("Added transaction:", addedTransaction);
+
+        setTransactions([...transactions, addedTransaction]);
+        setNewTransaction({
+          categoryId: "",
+          amount: 0,
+          description: "",
+          date: format(new Date(), "yyyy-MM-dd"),
+        });
+        setIsAddTransactionOpen(false);
+
+        // Show success message (optional)
+        setError("");
+      } catch (err) {
+        console.error("Error adding transaction:", err);
+        setError(
+          err instanceof Error ? err.message : "Error adding transaction"
+        );
+      }
+    } else {
+      setError("Please select a category and enter a valid amount");
     }
   };
 
-  const handleEditCategory = () => {
+  const handleEditCategory = async () => {
     if (editCategory && editCategory.name && editCategory.budget > 0) {
-      setCategories(
-        categories.map((cat) =>
-          cat.id === editCategory.id ? editCategory : cat
-        )
-      );
-      setEditCategory(null);
-      setIsEditCategoryOpen(false);
+      try {
+        const response = await fetch(`/api/categories/${editCategory.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: editCategory.name,
+            budget: editCategory.budget,
+            color: editCategory.color,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to update category");
+
+        setCategories(
+          categories.map((cat) =>
+            cat.id === editCategory.id ? editCategory : cat
+          )
+        );
+        setEditCategory(null);
+        setIsEditCategoryOpen(false);
+      } catch (err) {
+        setError("Error updating category");
+        console.error("Error updating category:", err);
+      }
     }
   };
 
-  const handleEditTransaction = () => {
+  const handleEditTransaction = async () => {
     if (
       editTransaction &&
       editTransaction.categoryId &&
       editTransaction.amount > 0
     ) {
-      setTransactions(
-        transactions.map((trans) =>
-          trans.id === editTransaction.id ? editTransaction : trans
-        )
-      );
-      setEditTransaction(null);
-      setIsEditTransactionOpen(false);
+      try {
+        const response = await fetch(
+          `/api/transactions/${editTransaction.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              categoryId: editTransaction.categoryId,
+              amount: editTransaction.amount,
+              description: editTransaction.description,
+              date: editTransaction.date,
+            }),
+          }
+        );
+
+        if (!response.ok) throw new Error("Failed to update transaction");
+
+        setTransactions(
+          transactions.map((trans) =>
+            trans.id === editTransaction.id ? editTransaction : trans
+          )
+        );
+        setEditTransaction(null);
+        setIsEditTransactionOpen(false);
+      } catch (err) {
+        setError("Error updating transaction");
+        console.error("Error updating transaction:", err);
+      }
     }
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(categories.filter((cat) => cat.id !== categoryId));
-    setTransactions(
-      transactions.filter((trans) => trans.categoryId !== categoryId)
-    );
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete category");
+
+      setCategories(categories.filter((cat) => cat.id !== categoryId));
+      setTransactions(
+        transactions.filter((trans) => trans.categoryId !== categoryId)
+      );
+    } catch (err) {
+      setError("Error deleting category");
+      console.error("Error deleting category:", err);
+    }
   };
 
-  const handleDeleteTransaction = (transactionId: string) => {
-    setTransactions(transactions.filter((trans) => trans.id !== transactionId));
+  const handleDeleteTransaction = async (transactionId: string) => {
+    try {
+      const response = await fetch(`/api/transactions/${transactionId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete transaction");
+
+      setTransactions(
+        transactions.filter((trans) => trans.id !== transactionId)
+      );
+    } catch (err) {
+      setError("Error deleting transaction");
+      console.error("Error deleting transaction:", err);
+    }
   };
 
   const getCategorySpending = (categoryId: string) => {
@@ -172,10 +300,21 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white text-black p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header with User Info */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Budget Tracker</h1>
           <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">
+                Welcome, {user?.name || "User"}
+              </span>
+              <button
+                onClick={() => logout()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg shadow text-sm font-medium hover:bg-red-700"
+              >
+                Log Out
+              </button>
+            </div>
             <button
               onClick={() => setIsYearly(!isYearly)}
               className="px-4 py-2 bg-black text-white rounded-lg shadow text-sm font-medium hover:bg-gray-800"
