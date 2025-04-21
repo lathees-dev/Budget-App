@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         _id: new ObjectId(categoryId),
         userId: user.id,
       });
-    } catch (e) {
+    } catch{
       // If ObjectId conversion fails, try with string ID
       category = await db.collection("categories").findOne({
         _id: categoryId,

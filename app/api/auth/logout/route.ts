@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { removeAuthCookie } from '@/lib/auth';
 
 export function POST() {

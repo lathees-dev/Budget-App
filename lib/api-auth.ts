@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 // This function is for server components and API routes, NOT edge middleware
 export async function getUserFromToken() {
   try {
-    const token = cookies().get("auth_token")?.value;
+    const token = (await cookies()).get("auth_token")?.value;
 
     if (!token) return null;
 
@@ -34,9 +34,9 @@ export async function getUserFromToken() {
 }
 
 // Authentication middleware for API routes
-export async function authMiddleware(req) {
+export async function authMiddleware() {
   try {
-    const token = cookies().get("auth_token")?.value;
+    const token = (await cookies()).get("auth_token")?.value;
 
     if (!token) {
       return { error: "Not authenticated", status: 401 };

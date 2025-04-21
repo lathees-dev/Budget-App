@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { jwtVerify, SignJWT } from "jose"; // Use jose instead of jsonwebtoken
 import { cookies } from "next/headers";
 import { UserData } from "./models/User";
@@ -25,14 +25,15 @@ export async function verifyToken(
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return { sub: payload.sub as string };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 // Set token in cookies
-export function setAuthCookie(token: string) {
-  cookies().set({
+export async function setAuthCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set({
     name: "auth_token",
     value: token,
     httpOnly: true,
@@ -44,15 +45,17 @@ export function setAuthCookie(token: string) {
 }
 
 // Remove token from cookies
-export function removeAuthCookie() {
-  cookies().delete("auth_token");
+export async function removeAuthCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete("auth_token");
 }
 
 // Get current user from token - this will now be used in a server component or API route
 // NOT in edge middleware
 export async function getCurrentUser(): Promise<UserData | null> {
   try {
-    const token = cookies().get("auth_token")?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) return null;
 
@@ -64,7 +67,7 @@ export async function getCurrentUser(): Promise<UserData | null> {
     // For middleware, we'll only verify the token's validity
 
     return null; // We'll implement the actual user fetching in API routes
-  } catch (error) {
+  } catch {
     return null;
   }
 }

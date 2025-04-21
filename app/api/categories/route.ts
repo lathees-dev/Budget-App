@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
 import { getUserFromToken } from "@/lib/api-auth";
 
 // GET all categories for current user

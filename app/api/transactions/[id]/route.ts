@@ -35,9 +35,9 @@ export async function PUT(
       transaction = await db.collection("transactions").findOne({
         _id: new ObjectId(params.id),
       });
-    } catch (e) {
+    } catch {
       transaction = await db.collection("transactions").findOne({
-        _id: params.id,
+        _id: new ObjectId(params.id),
       });
     }
 
@@ -56,7 +56,7 @@ export async function PUT(
         _id: new ObjectId(categoryId),
         userId: user.id,
       });
-    } catch (e) {
+    } catch {
       category = await db.collection("categories").findOne({
         _id: categoryId,
         userId: user.id,

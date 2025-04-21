@@ -48,7 +48,7 @@ export default function Home() {
   const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Removed unused isLoading state
   const [error, setError] = useState("");
 
   const [newCategory, setNewCategory] = useState({
@@ -74,7 +74,7 @@ export default function Home() {
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      // Removed isLoading setter
       try {
         // Fetch categories
         const categoriesRes = await fetch("/api/categories");
@@ -93,8 +93,6 @@ export default function Home() {
       } catch (err) {
         setError("Error loading data. Please try again.");
         console.error("Error fetching data:", err);
-      } finally {
-        setIsLoading(false);
       }
     };
 
