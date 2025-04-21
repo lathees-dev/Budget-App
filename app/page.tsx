@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import {
   ChevronLeftIcon,
@@ -48,7 +46,6 @@ export default function Home() {
   const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false);
-  // Removed unused isLoading state
   const [error, setError] = useState("");
 
   const [newCategory, setNewCategory] = useState({
@@ -74,7 +71,6 @@ export default function Home() {
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
-      // Removed isLoading setter
       try {
         // Fetch categories
         const categoriesRes = await fetch("/api/categories");
@@ -116,6 +112,7 @@ export default function Home() {
         setCategories([...categories, addedCategory]);
         setNewCategory({ name: "", budget: 0, color: "#0088FE" });
         setIsAddCategoryOpen(false);
+        setError("");
       } catch (err) {
         setError("Error adding category");
         console.error("Error adding category:", err);
@@ -155,8 +152,6 @@ export default function Home() {
           date: format(new Date(), "yyyy-MM-dd"),
         });
         setIsAddTransactionOpen(false);
-
-        // Show success message (optional)
         setError("");
       } catch (err) {
         console.error("Error adding transaction:", err);
@@ -193,6 +188,7 @@ export default function Home() {
         );
         setEditCategory(null);
         setIsEditCategoryOpen(false);
+        setError("");
       } catch (err) {
         setError("Error updating category");
         console.error("Error updating category:", err);
@@ -232,6 +228,7 @@ export default function Home() {
         );
         setEditTransaction(null);
         setIsEditTransactionOpen(false);
+        setError("");
       } catch (err) {
         setError("Error updating transaction");
         console.error("Error updating transaction:", err);
@@ -251,6 +248,7 @@ export default function Home() {
       setTransactions(
         transactions.filter((trans) => trans.categoryId !== categoryId)
       );
+      setError("");
     } catch (err) {
       setError("Error deleting category");
       console.error("Error deleting category:", err);
@@ -268,6 +266,7 @@ export default function Home() {
       setTransactions(
         transactions.filter((trans) => trans.id !== transactionId)
       );
+      setError("");
     } catch (err) {
       setError("Error deleting transaction");
       console.error("Error deleting transaction:", err);
@@ -356,6 +355,13 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Dashboard Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
