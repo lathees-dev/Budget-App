@@ -69,6 +69,21 @@ export default function Home() {
 
   const { user, logout } = useAuth();
 
+  // Predefined categories for selection
+  const predefinedCategories = [
+    { name: "Food & Dining", color: "#FF6384" },
+    { name: "Housing", color: "#36A2EB" },
+    { name: "Transportation", color: "#FFCE56" },
+    { name: "Entertainment", color: "#4BC0C0" },
+    { name: "Shopping", color: "#9966FF" },
+    { name: "Healthcare", color: "#FF9F40" },
+    { name: "Education", color: "#8AC926" },
+    { name: "Personal Care", color: "#F15BB5" },
+    { name: "Travel", color: "#00BBF9" },
+    { name: "Utilities", color: "#FB5607" },
+    { name: "Other", color: "#757575" },
+  ];
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -168,12 +183,14 @@ export default function Home() {
   const handleEditCategory = async () => {
     if (editCategory && editCategory.name && editCategory.budget > 0) {
       try {
-        const response = await fetch(`/api/categories/${editCategory.id}`, {
+        // Replace dynamic route with static route
+        const response = await fetch(`/api/categories/update`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            id: editCategory.id, // Include ID in the request body
             name: editCategory.name,
             budget: editCategory.budget,
             color: editCategory.color,
@@ -204,21 +221,20 @@ export default function Home() {
       editTransaction.amount > 0
     ) {
       try {
-        const response = await fetch(
-          `/api/transactions/${editTransaction.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              categoryId: editTransaction.categoryId,
-              amount: editTransaction.amount,
-              description: editTransaction.description,
-              date: editTransaction.date,
-            }),
-          }
-        );
+        // Replace dynamic route with static route
+        const response = await fetch(`/api/transactions/update`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: editTransaction.id, // Include ID in the request body
+            categoryId: editTransaction.categoryId,
+            amount: editTransaction.amount,
+            description: editTransaction.description,
+            date: editTransaction.date,
+          }),
+        });
 
         if (!response.ok) throw new Error("Failed to update transaction");
 
@@ -239,8 +255,13 @@ export default function Home() {
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      const response = await fetch(`/api/categories/${categoryId}`, {
+      // Replace dynamic route with static route
+      const response = await fetch(`/api/categories/delete`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: categoryId }), // Include ID in the request body
       });
 
       if (!response.ok) throw new Error("Failed to delete category");
@@ -258,8 +279,13 @@ export default function Home() {
 
   const handleDeleteTransaction = async (transactionId: string) => {
     try {
-      const response = await fetch(`/api/transactions/${transactionId}`, {
+      // Replace dynamic route with static route
+      const response = await fetch(`/api/transactions/delete`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: transactionId }), // Include ID in the request body
       });
 
       if (!response.ok) throw new Error("Failed to delete transaction");
@@ -616,30 +642,39 @@ export default function Home() {
                   <div className="mt-4 space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Name
+                        Category Type
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={newCategory.name}
-                        onChange={(e) =>
-                          setNewCategory({
-                            ...newCategory,
-                            name: e.target.value,
-                          })
-                        }
-                        className="mt-1 p-2 h-10 border border-gray-400 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Category Name"
-                      />
+                        onChange={(e) => {
+                          const selectedCategory = predefinedCategories.find(
+                            (cat) => cat.name === e.target.value
+                          );
+                          if (selectedCategory) {
+                            setNewCategory({
+                              ...newCategory,
+                              name: selectedCategory.name,
+                              color: selectedCategory.color,
+                            });
+                          }
+                        }}
+                        className="mt-1 p-2 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      >
+                        <option value="">Select a category</option>
+                        {predefinedCategories.map((category) => (
+                          <option key={category.name} value={category.name}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Budget
                       </label>
                       <input
-                        type="text" // Change type to text to allow free input
-                        value={
-                          newCategory.budget === 0 ? "" : newCategory.budget
-                        }
+                        type="text"
+                        value={newCategory.budget === 0 ? "" : newCategory.budget}
                         onChange={(e) => {
                           const value = e.target.value;
                           setNewCategory({
@@ -651,22 +686,27 @@ export default function Home() {
                         placeholder="eg. 1000"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Color
                       </label>
-                      <input
-                        type="color"
-                        value={newCategory.color}
-                        onChange={(e) =>
-                          setNewCategory({
-                            ...newCategory,
-                            color: e.target.value,
-                          })
-                        }
-                        className="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      />
+                      <div className="flex items-center mt-1">
+                        <div
+                          className="w-10 h-10 rounded-md mr-3"
+                          style={{ backgroundColor: newCategory.color }}
+                        />
+                        <input
+                          type="color"
+                          value={newCategory.color}
+                          onChange={(e) =>
+                            setNewCategory({
+                              ...newCategory,
+                              color: e.target.value,
+                            })
+                          }
+                          className="w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end space-x-3">
